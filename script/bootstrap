@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+#
+# script/bootstrap
+#
+# Resolve all dependencies that the project requires to run.
+# This script is idempotent and can be run multiple times safely.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+log_info() {
+    echo -e "${GREEN}==>${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}==>${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}==>${NC} $1"
+}
+
+# Detect OS
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)     echo "linux";;
+        Darwin*)    echo "macos";;
+        MINGW*|MSYS*|CYGWIN*) echo "windows";;
+        *)          echo "unknown";;
+    esac
+}
+
+OS=$(detect_os)
+log_info "Detected OS: $OS"
+
+# Check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Install worktrunk - Git worktree management
+install_worktrunk() {
+    log_info "Installing worktrunk..."
+
+    if command_exists wt; then
+        log_info "worktrunk already installed"
+        return 0
+    fi
+
+    case "$OS" in
+        macos)
+            if command_exists brew; then
+                brew install worktrunk && wt config shell install || log_warn "worktrunk install failed"
+            else
+                log_warn "Homebrew not found, skipping worktrunk"
+            fi
+            ;;
+        linux)
+            if command_exists brew; then
+                brew install worktrunk && wt config shell install || log_warn "worktrunk install failed"
+            elif command_exists cargo; then
+                cargo install worktrunk && wt config shell install || log_warn "worktrunk cargo install failed"
+            else
+                log_warn "Neither Homebrew nor Cargo found, skipping worktrunk"
+            fi
+            ;;
+        windows)
+            if command_exists winget; then
+                winget install max-sixty.worktrunk || log_warn "worktrunk winget install failed"
+            else
+                log_warn "winget not found, skipping worktrunk"
+            fi
+            ;;
+    esac
+}
+
+# Install memvid - Portable memory system
+install_memvid() {
+    log_info "Installing memvid..."
+
+    # Try npm first (CLI)
+    if command_exists npm; then
+        if ! command_exists memvid; then
+            npm install -g memvid-cli 2>/dev/null || log_warn "memvid-cli npm install failed"
+        else
+            log_info "memvid CLI already installed"
+        fi
+    fi
+
+    # Also install Python SDK if pip available
+    if command_exists pip; then
+        pip install --quiet memvid-sdk 2>/dev/null || log_warn "memvid-sdk pip install failed"
+    elif command_exists pip3; then
+        pip3 install --quiet memvid-sdk 2>/dev/null || log_warn "memvid-sdk pip3 install failed"
+    fi
+}
+
+# Install gibram - In-memory knowledge graph
+install_gibram() {
+    log_info "Installing gibram..."
+
+    if command_exists gibram-server; then
+        log_info "gibram already installed"
+        return 0
+    fi
+
+    # Try the official install script
+    curl -fsSL https://gibram.io/install.sh 2>/dev/null | sh 2>/dev/null || {
+        log_warn "gibram install script failed, trying pip..."
+        if command_exists pip; then
+            pip install --quiet gibram 2>/dev/null || log_warn "gibram pip install failed"
+        elif command_exists pip3; then
+            pip3 install --quiet gibram 2>/dev/null || log_warn "gibram pip3 install failed"
+        fi
+    }
+}
+
+# Install adversarial-spec dependencies
+install_adversarial_spec() {
+    log_info "Installing adversarial-spec dependencies..."
+
+    # adversarial-spec requires litellm
+    if command_exists pip; then
+        pip install --quiet litellm 2>/dev/null || log_warn "litellm pip install failed"
+    elif command_exists pip3; then
+        pip3 install --quiet litellm 2>/dev/null || log_warn "litellm pip3 install failed"
+    else
+        log_warn "pip not found, skipping adversarial-spec dependencies"
+    fi
+}
+
+# Install autocoder dependencies
+install_autocoder() {
+    log_info "Installing autocoder dependencies..."
+
+    # autocoder requires SQLAlchemy
+    if command_exists pip; then
+        pip install --quiet sqlalchemy 2>/dev/null || log_warn "sqlalchemy pip install failed"
+    elif command_exists pip3; then
+        pip3 install --quiet sqlalchemy 2>/dev/null || log_warn "sqlalchemy pip3 install failed"
+    fi
+}
+
+# Main installation
+main() {
+    log_info "Bootstrapping Contextium dependencies..."
+    echo ""
+
+    install_worktrunk &
+    install_memvid &
+    install_gibram &
+    install_adversarial_spec &
+    install_autocoder &
+
+    # Wait for all background jobs
+    wait
+
+    echo ""
+    log_info "Bootstrap complete!"
+}
+
+main "$@"
