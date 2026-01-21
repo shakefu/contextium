@@ -174,17 +174,185 @@ To capture real hook data from Claude Code sessions, configure hooks in `.claude
 
 **Log format:** NDJSON (newline-delimited JSON), one object per hook event
 
-## Known Hook Types
+## Claude Code Hooks Reference
 
-Based on Claude Code documentation:
+Complete reference for all Claude Code hook types.
 
-| Hook | When Triggered |
+### All Hook Types
+
+| Hook | When Triggered | Matcher |
+| -- | -- | -- |
+| `SessionStart` | Session begins or resumes | N/A |
+| `SessionEnd` | Session terminates | N/A |
+| `PreToolUse` | Before Claude executes a tool | Tool name pattern |
+| `PostToolUse` | After tool completes | Tool name pattern |
+| `UserPromptSubmit` | When user submits a prompt | N/A |
+| `PermissionRequest` | When Claude requests permission for a tool (v2.0.45+) | N/A |
+| `Stop` | When Claude finishes responding | N/A |
+| `SubagentStop` | When a subagent finishes (v1.0.41+) | N/A |
+| `PreCompact` | Before context compaction | N/A |
+
+### Hook Configuration Structure
+
+```json
+{
+  "hooks": {
+    "EventName": [
+      {
+        "matcher": "ToolPattern",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "your-command-here"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Matcher patterns** (for PreToolUse/PostToolUse only):
+
+- Empty string `""` or omitted: matches nothing specific
+- `"Write"`: matches only the Write tool (case-sensitive)
+- `"*"`: matches all tools
+
+### Hook Execution Types
+
+| Type | Description |
 | -- | -- |
-| `SessionStart` | When a Claude Code session begins |
-| `SessionEnd` | When a Claude Code session ends |
-| `PreToolUse` | Before Claude executes a tool |
-| `PostToolUse` | After Claude executes a tool |
-| `UserPromptSubmit` | When user submits a prompt |
+| `command` | Runs a bash command |
+| `prompt` | LLM-based evaluation |
+
+### Exit Codes and Communication
+
+Hooks communicate via exit codes, stdout, and stderr:
+
+| Exit Code | Meaning |
+| -- | -- |
+| 0 | Success - stdout shown to user in transcript mode |
+| 2 | Blocking error - stderr fed back to Claude to process |
+| Other | Non-blocking error - stderr shown to user, execution continues |
+
+### Structured JSON Output
+
+Hooks can return structured JSON for more control:
+
+```json
+{
+  "decision": "approve|block|allow|deny",
+  "reason": "Explanation shown to Claude",
+  "continue": true,
+  "updatedInput": { }
+}
+```
+
+| Field | Purpose |
+| -- | -- |
+| `decision` | approve, block, allow, or deny |
+| `reason` | Explanation shown to Claude |
+| `continue` | For Stop hooks - force continuation |
+| `updatedInput` | Modify tool parameters before execution |
+
+### Environment Variables
+
+| Variable | Description |
+| -- | -- |
+| `CLAUDE_PROJECT_DIR` | Absolute path to project root |
+| `CLAUDE_CODE_REMOTE` | "true" if web environment, unset for local CLI |
+
+### Execution Behavior
+
+- **Timeout**: 60 seconds by default, configurable per command
+- **Parallelism**: All matching hooks run in parallel
+- **Deduplication**: Multiple identical hook commands are deduplicated
+
+### Full Configuration Example
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook SessionStart" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook PreToolUse" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook PostToolUse" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook UserPromptSubmit" }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook PermissionRequest" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook Stop" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook SubagentStop" }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook PreCompact" }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "ctxium hook SessionEnd" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Official Documentation
+
+- [Hooks reference - Claude Code Docs](https://docs.claude.com/en/docs/claude-code/hooks)
+- [How to configure hooks](https://claude.com/blog/how-to-configure-hooks)
 
 ## Next Steps
 
