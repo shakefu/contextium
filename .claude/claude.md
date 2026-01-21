@@ -91,3 +91,29 @@ Startup logs are written to:
 - `/tmp/contextium-bootstrap.log` - Tool installation
 - `/tmp/contextium-startup.log` - Agent startup output
 - `/tmp/contextium/*.log` - Individual agent logs
+
+## Skills (Slash Commands)
+
+Contextium provides Claude Code skills for agent invocation:
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| Startup | `/startup` | Run full startup agent pipeline |
+| Init Session | `/init-session` | Initialize environment and state |
+| Determine Task | `/determine-task` | Analyze state, find current task |
+| Fetch Context | `/fetch-context` | Load minimal relevant context |
+| Task | `/task <cmd>` | Manage tasks (create, complete, list) |
+
+### Usage Examples
+
+```
+/startup                    # Full initialization
+/init-session               # Just initialize state
+/determine-task             # Find what to work on
+/fetch-context              # Load context for task
+/task create fix-bug "Fix the login bug"
+/task complete fix-bug
+/task list
+```
+
+Skills are defined in `.claude/skills/` and integrate with the shell agents in `agents/`.
