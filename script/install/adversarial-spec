@@ -7,6 +7,9 @@
 
 set -e
 
+cd "$(dirname "$0")/../.."
+REPO_ROOT="$(pwd)"
+
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -20,33 +23,61 @@ log_error() { echo -e "${RED}==>${NC} $1"; }
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 install_adversarial_spec() {
-    log_info "Installing adversarial-spec dependencies..."
+    log_info "Installing adversarial-spec..."
 
     # Install litellm (required for multi-model support)
     if command_exists pip3; then
         log_info "Installing litellm via pip3..."
-        pip3 install --quiet --upgrade litellm
+        pip3 install --quiet --upgrade litellm 2>/dev/null || true
     elif command_exists pip; then
         log_info "Installing litellm via pip..."
-        pip install --quiet --upgrade litellm
+        pip install --quiet --upgrade litellm 2>/dev/null || true
     else
         log_error "pip required for adversarial-spec"
         exit 1
     fi
 
-    # Check for Claude Code plugin installation
-    if command_exists claude; then
-        log_info "Claude Code detected - you can install the plugin with:"
-        log_info "  claude plugin marketplace add zscole/adversarial-spec"
-        log_info "  claude plugin install adversarial-spec"
+    # Clone or update the repo
+    TOOLS_DIR="$REPO_ROOT/tools"
+    SPEC_DIR="$TOOLS_DIR/adversarial-spec"
+
+    mkdir -p "$TOOLS_DIR"
+
+    if [ -d "$SPEC_DIR" ]; then
+        log_info "adversarial-spec already cloned, updating..."
+        git -C "$SPEC_DIR" pull --quiet 2>/dev/null || true
+    else
+        log_info "Cloning adversarial-spec..."
+        git clone --quiet https://github.com/zscole/adversarial-spec "$SPEC_DIR" 2>/dev/null || {
+            log_warn "Failed to clone adversarial-spec (network issue?)"
+            return 1
+        }
     fi
 
-    log_info "adversarial-spec dependencies installed"
+    # Create symlink in .claude/skills
+    SKILLS_DIR="$REPO_ROOT/.claude/skills"
+    SKILL_LINK="$SKILLS_DIR/adversarial-spec"
+    SKILL_SOURCE="$SPEC_DIR/skills/adversarial-spec"
+
+    if [ -L "$SKILL_LINK" ]; then
+        rm "$SKILL_LINK"
+    fi
+
+    if [ -d "$SKILL_SOURCE" ]; then
+        # Use relative path from .claude/skills/ to tools/
+        ln -sf "../../tools/adversarial-spec/skills/adversarial-spec" "$SKILL_LINK"
+        log_info "Skill linked: .claude/skills/adversarial-spec"
+    else
+        log_warn "Skill source not found at $SKILL_SOURCE"
+    fi
+
+    log_info "adversarial-spec installed"
     log_info ""
-    log_info "Configuration required:"
-    log_info "  export OPENAI_API_KEY=\"sk-...\""
-    log_info "  # Or for OpenRouter:"
-    log_info "  export OPENROUTER_API_KEY=\"sk-or-...\""
+    log_info "Usage: /adversarial-spec \"your feature description\""
+    log_info ""
+    log_info "API keys (set at least one):"
+    log_info "  OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY"
+    log_info "  XAI_API_KEY, OPENROUTER_API_KEY, etc."
 }
 
 install_adversarial_spec "$@"
