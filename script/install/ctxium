@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+#
+# script/install/ctxium
+#
+# Build and install ctxium - Contextium CLI for hook exploration
+# Builds from source in the ctxium/ directory
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+log_info() { echo -e "${GREEN}==>${NC} $1"; }
+log_warn() { echo -e "${YELLOW}==>${NC} $1"; }
+log_error() { echo -e "${RED}==>${NC} $1"; }
+
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+# Find the repo root (where this script lives is script/install/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+CTXIUM_DIR="$REPO_ROOT/ctxium"
+
+# Default install location
+INSTALL_DIR="${CTXIUM_INSTALL_DIR:-$HOME/.local/bin}"
+
+install_ctxium() {
+    log_info "Building ctxium from source..."
+
+    # Check for cargo
+    if ! command_exists cargo; then
+        log_error "Rust/Cargo required to build ctxium"
+        log_info "Install Rust: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+        exit 1
+    fi
+
+    # Check ctxium source exists
+    if [[ ! -d "$CTXIUM_DIR" ]]; then
+        log_error "ctxium source not found at $CTXIUM_DIR"
+        exit 1
+    fi
+
+    # Build release binary
+    cd "$CTXIUM_DIR"
+    cargo build --release
+
+    # Ensure install directory exists
+    mkdir -p "$INSTALL_DIR"
+
+    # Copy binary
+    local binary_src="$CTXIUM_DIR/target/release/ctxium"
+    local binary_dst="$INSTALL_DIR/ctxium"
+
+    if [[ ! -f "$binary_src" ]]; then
+        log_error "Build failed - binary not found at $binary_src"
+        exit 1
+    fi
+
+    cp "$binary_src" "$binary_dst"
+    chmod +x "$binary_dst"
+
+    log_info "Installed ctxium to $binary_dst"
+
+    # Check if install dir is in PATH
+    if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+        log_warn "$INSTALL_DIR is not in PATH"
+        log_info "Add to your shell profile:"
+        log_info "  export PATH=\"$INSTALL_DIR:\$PATH\""
+    fi
+
+    # Verify installation
+    if command_exists ctxium; then
+        log_info "ctxium installed successfully: $(ctxium --version)"
+    else
+        log_warn "ctxium built but not yet in PATH for this session"
+        log_info "Run: export PATH=\"$INSTALL_DIR:\$PATH\""
+    fi
+}
+
+install_ctxium "$@"
