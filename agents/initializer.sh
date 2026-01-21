@@ -119,16 +119,24 @@ output_summary() {
     log_agent "Session initialized"
     echo ""
     echo "=== SESSION SUMMARY ==="
-    if [ -f "$STATE_FILE" ] && command -v jq >/dev/null 2>&1; then
-        echo "Session ID: $(jq -r '.session.id' "$STATE_FILE")"
-        echo "Repository: $(jq -r '.session.repo' "$STATE_FILE")"
-        echo "Branch: $(jq -r '.session.branch' "$STATE_FILE")"
-        echo "Status: $(jq -r '.status' "$STATE_FILE")"
+    if [ -f "$STATE_FILE" ]; then
+        if command -v jq >/dev/null 2>&1; then
+            echo "Session ID: $(jq -r '.session.id' "$STATE_FILE")"
+            echo "Repository: $(jq -r '.session.repo' "$STATE_FILE")"
+            echo "Branch: $(jq -r '.session.branch' "$STATE_FILE")"
+            echo "Status: $(jq -r '.status' "$STATE_FILE")"
 
-        if [ -f "$TASKS_FILE" ]; then
-            local task_count=$(jq '.tasks | length' "$TASKS_FILE")
-            local current=$(jq -r '.current // "none"' "$TASKS_FILE")
-            echo "Tasks: $task_count total, current: $current"
+            if [ -f "$TASKS_FILE" ]; then
+                local task_count=$(jq '.tasks | length' "$TASKS_FILE")
+                local current=$(jq -r '.current // "none"' "$TASKS_FILE")
+                echo "Tasks: $task_count total, current: $current"
+            fi
+        else
+            # Fallback without jq
+            echo "Repository: $(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+            echo "Branch: $(git branch --show-current 2>/dev/null || echo 'unknown')"
+            echo "Status: initialized"
+            echo "(Install jq for detailed state info)"
         fi
     fi
     echo "======================="

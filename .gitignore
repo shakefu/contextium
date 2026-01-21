@@ -1,0 +1,23 @@
+# Contextium session state (per-session, not committed)
+.contextium/
+
+# Logs
+*.log
+/tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Dependencies (if any)
+node_modules/
+__pycache__/
+*.pyc
+target/

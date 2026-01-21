@@ -27,11 +27,17 @@ TASKS_FILE="$STATE_DIR/tasks.json"
 PROGRESS_FILE="claude-progress.txt"
 
 # Check if jq is available
-require_jq() {
-    if ! command -v jq >/dev/null 2>&1; then
-        log_error "jq required for task determination"
-        exit 1
+has_jq() {
+    command -v jq >/dev/null 2>&1
+}
+
+check_jq() {
+    if ! has_jq; then
+        log_warn "jq not installed - task determination limited"
+        log_warn "Install jq for full task management"
+        return 1
     fi
+    return 0
 }
 
 # Analyze git history for context
@@ -69,6 +75,12 @@ check_progress_file() {
 determine_current_task() {
     if [ ! -f "$TASKS_FILE" ]; then
         log_warn "No tasks file found"
+        return 0
+    fi
+
+    if ! has_jq; then
+        log_info "Tasks file exists: $TASKS_FILE"
+        log_info "Install jq to analyze tasks"
         return 0
     fi
 
@@ -134,7 +146,7 @@ output_summary() {
     echo ""
     echo "=== TASK DETERMINATION SUMMARY ==="
 
-    if [ -f "$TASKS_FILE" ]; then
+    if [ -f "$TASKS_FILE" ] && has_jq; then
         local total=$(jq '.tasks | length' "$TASKS_FILE")
         local completed=$(jq '[.tasks[] | select(.status == "completed")] | length' "$TASKS_FILE")
         local pending=$(jq '[.tasks[] | select(.status == "pending")] | length' "$TASKS_FILE")
@@ -144,6 +156,8 @@ output_summary() {
         echo "Completed: $completed"
         echo "In progress: $in_progress"
         echo "Pending: $pending"
+    elif [ -f "$TASKS_FILE" ]; then
+        echo "Tasks file exists (install jq for details)"
     else
         echo "No task list found"
         echo "Ready for new work or task creation"
@@ -156,7 +170,7 @@ output_summary() {
 main() {
     log_agent "Task determination agent starting..."
 
-    require_jq
+    check_jq  # Warn if jq missing but continue
     analyze_git_history
     check_progress_file
     check_branch_task
