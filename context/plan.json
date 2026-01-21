@@ -1,0 +1,54 @@
+{
+  "name": "Contextium Project Documentation",
+  "description": "Analysis and documentation of integrated technologies for the Contextium AI context-generation platform",
+  "tasks": [
+    {
+      "id": "worktrunk",
+      "name": "Document worktrunk",
+      "description": "Analyze and document worktrunk - Git worktree management for parallel AI agents",
+      "source": "https://github.com/max-sixty/worktrunk",
+      "output": "context/projects/worktrunk.md",
+      "status": "completed"
+    },
+    {
+      "id": "memvid",
+      "name": "Document memvid",
+      "description": "Analyze and document memvid - Portable single-file memory system for AI agents",
+      "source": "https://github.com/memvid/memvid",
+      "output": "context/projects/memvid.md",
+      "status": "completed"
+    },
+    {
+      "id": "autocoder",
+      "name": "Document autocoder",
+      "description": "Analyze and document autocoder - Autonomous AI coding agent using Claude Agent SDK",
+      "source": "https://github.com/leonvanzyl/autocoder",
+      "output": "context/projects/autocoder.md",
+      "status": "completed"
+    },
+    {
+      "id": "gibram",
+      "name": "Document gibram",
+      "description": "Analyze and document gibram - In-memory knowledge graph for RAG workflows",
+      "source": "https://github.com/gibram-io/gibram",
+      "output": "context/projects/gibram.md",
+      "status": "completed"
+    },
+    {
+      "id": "adversarial-spec",
+      "name": "Document adversarial-spec",
+      "description": "Analyze and document adversarial-spec - Multi-model specification refinement through debate",
+      "source": "https://github.com/zscole/adversarial-spec",
+      "output": "context/projects/adversarial-spec.md",
+      "status": "completed"
+    },
+    {
+      "id": "harness-patterns",
+      "name": "Document Anthropic harness patterns",
+      "description": "Analyze and document techniques for long-running agents from Anthropic engineering",
+      "source": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+      "output": "context/projects/harness-patterns.md",
+      "status": "completed"
+    }
+  ]
+}
