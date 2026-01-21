@@ -88,6 +88,55 @@ Context is injected **when relevant**:
 - Related code patterns → when Claude is implementing similar features
 - Test requirements → when Claude is writing tests
 
+## Multi-Agent Coordination
+
+The server acts as a **scheduler and conflict detector** for parallel agents working in the same repo.
+
+### How It Works
+
+1. **Task Analysis** - When a task is created, server analyzes:
+   - Which files/modules will likely be touched
+   - Dependencies between tasks
+   - Potential for merge conflicts
+
+2. **Conflict Detection** - Server maintains awareness of:
+   - Which agents are currently working
+   - What files each agent is modifying
+   - Which branches exist and their divergence
+
+3. **Smart Scheduling** - Server decides:
+   - Tasks that can safely run in parallel (different modules, no overlap)
+   - Tasks that must be sequential (same files, high conflict risk)
+   - Tasks that need coordination (shared interfaces, API changes)
+
+### Coordination Strategies
+
+| Scenario | Strategy |
+|----------|----------|
+| Non-overlapping modules | Run in parallel, merge freely |
+| Same file, different sections | Run in parallel with caution flag |
+| Same file, same sections | Sequential execution |
+| Interface changes | Notify dependent tasks, coordinate merge order |
+| Shared test files | Queue or partition test ownership |
+
+### Agent Awareness
+
+Each agent knows:
+- Its assigned task scope (files it "owns" for this task)
+- Other active agents and their scopes
+- Whether to proceed, wait, or flag potential conflicts
+
+```
+$ ctxium status
+Agent: claude-session-abc123
+Task: implement-user-auth
+Scope: src/auth/*, tests/auth/*
+Parallel agents: 2
+  - claude-session-def456: refactor-logging (src/utils/logger.ts)
+  - claude-session-ghi789: add-dashboard (src/pages/dashboard/*)
+Conflicts: none
+```
+
 ## External Tool Integration
 
 The server can run or wrap external tools:
@@ -102,15 +151,16 @@ The server can run or wrap external tools:
 ## Key Benefits
 
 1. **Clean repos** - No context files polluting project code
-2. **Parallel agents** - Each agent/branch gets isolated context
-3. **No PR friction** - State persists externally, sessions just pick up
-4. **Focused context** - Only load what's needed, accuracy stays high
-5. **Cross-repo aware** - Unified context layer spans multiple projects
-6. **Learned behaviors** - Server remembers and reinforces patterns
+2. **Parallel agents** - Multiple agents work simultaneously with isolated context
+3. **Conflict-aware scheduling** - Server prevents merge conflicts before they happen
+4. **No PR friction** - State persists externally, sessions just pick up
+5. **Focused context** - Only load what's needed, accuracy stays high
+6. **Cross-repo aware** - Unified context layer spans multiple projects
+7. **Learned behaviors** - Server remembers and reinforces patterns
 
 ## Future Considerations
 
-- Multi-agent coordination (who's working on what)
 - Context summarization for long-running projects
-- Conflict detection when agents touch same files
-- Integration with existing project management tools
+- Integration with existing project management tools (Jira, Linear, GitHub Issues)
+- Automatic merge conflict resolution suggestions
+- Learning optimal task decomposition from historical data
