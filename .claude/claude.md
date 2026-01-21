@@ -38,3 +38,56 @@ This project follows the [Scripts to Rule Them All](https://github.blog/engineer
 - `script/install/memvid` - Portable AI memory
 - `script/install/gibram` - Knowledge graph for RAG
 - `script/install/adversarial-spec` - Multi-model debate
+
+## Sub-Agents
+
+Contextium uses sub-agents for session initialization. These run automatically via the SessionStart hook.
+
+### Agent Pipeline
+
+```
+SessionStart
+    │
+    ├─▶ script/bootstrap (background)
+    │
+    └─▶ agents/run-startup.sh
+            │
+            ├─▶ initializer     → Verify environment, init state files
+            ├─▶ task-determiner → Analyze state, determine current task
+            └─▶ context-fetcher → Load minimal relevant context
+```
+
+### Available Agents
+
+| Agent | Script | Purpose |
+|-------|--------|---------|
+| Initializer | `agents/initializer.sh` | Environment setup, state initialization |
+| Task Determiner | `agents/task-determiner.sh` | Analyze progress, select current task |
+| Context Fetcher | `agents/context-fetcher.sh` | Load minimal task-relevant context |
+
+### Manual Invocation
+
+```bash
+# Run full startup sequence
+./agents/run-startup.sh
+
+# Run individual agents
+./agents/initializer.sh
+./agents/task-determiner.sh
+./agents/context-fetcher.sh
+```
+
+### State Files
+
+| File | Purpose |
+|------|---------|
+| `.contextium/state.json` | Session state and metadata |
+| `.contextium/tasks.json` | Task list and progress tracking |
+| `.contextium/context-cache/` | Cached context for tasks |
+
+### Logs
+
+Startup logs are written to:
+- `/tmp/contextium-bootstrap.log` - Tool installation
+- `/tmp/contextium-startup.log` - Agent startup output
+- `/tmp/contextium/*.log` - Individual agent logs
