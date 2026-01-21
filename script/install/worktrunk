@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# script/install/worktrunk
+#
+# Install worktrunk - Git worktree management for parallel AI agents
+# https://github.com/max-sixty/worktrunk
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+log_info() { echo -e "${GREEN}==>${NC} $1"; }
+log_warn() { echo -e "${YELLOW}==>${NC} $1"; }
+log_error() { echo -e "${RED}==>${NC} $1"; }
+
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)     echo "linux";;
+        Darwin*)    echo "macos";;
+        MINGW*|MSYS*|CYGWIN*) echo "windows";;
+        *)          echo "unknown";;
+    esac
+}
+
+install_worktrunk() {
+    local os=$(detect_os)
+    log_info "Installing worktrunk for $os..."
+
+    if command_exists wt; then
+        log_info "worktrunk already installed: $(wt --version 2>/dev/null || echo 'version unknown')"
+        return 0
+    fi
+
+    case "$os" in
+        macos)
+            if command_exists brew; then
+                brew install worktrunk
+                wt config shell install
+            else
+                log_error "Homebrew required. Install from https://brew.sh"
+                exit 1
+            fi
+            ;;
+        linux)
+            if command_exists brew; then
+                brew install worktrunk
+                wt config shell install
+            elif command_exists cargo; then
+                cargo install worktrunk
+                wt config shell install
+            else
+                log_error "Homebrew or Cargo required"
+                log_info "Install Homebrew: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+                log_info "Or install Rust: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+                exit 1
+            fi
+            ;;
+        windows)
+            if command_exists winget; then
+                winget install max-sixty.worktrunk
+                git-wt config shell install
+            else
+                log_error "winget required on Windows"
+                exit 1
+            fi
+            ;;
+        *)
+            log_error "Unsupported OS"
+            exit 1
+            ;;
+    esac
+
+    log_info "worktrunk installed successfully"
+}
+
+install_worktrunk "$@"

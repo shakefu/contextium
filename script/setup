@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+#
+# script/setup
+#
+# Set up the project for the first time after cloning.
+# Runs bootstrap and performs any initial configuration.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Colors for output
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${GREEN}==>${NC} $1"
+}
+
+log_info "Setting up Contextium..."
+
+# Run bootstrap to install dependencies
+script/bootstrap
+
+# Create any necessary directories
+mkdir -p .contextium/cache
+mkdir -p .contextium/sessions
+
+# Create default config if it doesn't exist
+if [ ! -f .contextium/config.json ]; then
+    log_info "Creating default configuration..."
+    cat > .contextium/config.json << 'EOF'
+{
+  "version": "1.0.0",
+  "tools": {
+    "worktrunk": {
+      "enabled": true
+    },
+    "memvid": {
+      "enabled": true,
+      "memory_file": ".contextium/memory.mv2"
+    },
+    "gibram": {
+      "enabled": true,
+      "port": 6161
+    },
+    "adversarial_spec": {
+      "enabled": true
+    }
+  },
+  "hooks": {
+    "session_startup": true,
+    "pre_tool_use": true,
+    "session_end": true
+  }
+}
+EOF
+fi
+
+log_info "Setup complete!"
+log_info "Run 'script/bootstrap' to update dependencies in the future."

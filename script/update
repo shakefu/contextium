@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# script/update
+#
+# Update the project after a fresh pull.
+# Ensures all dependencies are current.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Colors for output
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${GREEN}==>${NC} $1"
+}
+
+log_info "Updating Contextium..."
+
+# Update dependencies
+script/bootstrap
+
+# Pull latest submodules if any
+if [ -f .gitmodules ]; then
+    log_info "Updating git submodules..."
+    git submodule update --init --recursive
+fi
+
+log_info "Update complete!"

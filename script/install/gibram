@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+#
+# script/install/gibram
+#
+# Install gibram - In-memory knowledge graph for RAG
+# https://github.com/gibram-io/gibram
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+log_info() { echo -e "${GREEN}==>${NC} $1"; }
+log_warn() { echo -e "${YELLOW}==>${NC} $1"; }
+log_error() { echo -e "${RED}==>${NC} $1"; }
+
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+install_gibram() {
+    log_info "Installing gibram..."
+
+    if command_exists gibram-server; then
+        log_info "gibram-server already installed"
+        return 0
+    fi
+
+    # Try official install script first
+    log_info "Trying official install script..."
+    if curl -fsSL https://gibram.io/install.sh 2>/dev/null | sh 2>/dev/null; then
+        log_info "gibram installed via official script"
+        return 0
+    fi
+
+    log_warn "Official script failed, trying alternatives..."
+
+    # Try Docker
+    if command_exists docker; then
+        log_info "Docker available - you can run gibram via:"
+        log_info "  docker run -p 6161:6161 gibramio/gibram:latest"
+        log_info "  # Or with docker-compose up -d"
+    fi
+
+    # Try pip
+    if command_exists pip3; then
+        log_info "Installing gibram via pip3..."
+        pip3 install --quiet gibram
+        log_info "gibram Python SDK installed"
+        return 0
+    elif command_exists pip; then
+        log_info "Installing gibram via pip..."
+        pip install --quiet gibram
+        log_info "gibram Python SDK installed"
+        return 0
+    fi
+
+    log_warn "Could not install gibram server - Docker or pip recommended"
+    log_info "Manual install: curl -fsSL https://gibram.io/install.sh | sh"
+}
+
+install_gibram "$@"

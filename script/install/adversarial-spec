@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# script/install/adversarial-spec
+#
+# Install adversarial-spec - Multi-model specification refinement
+# https://github.com/zscole/adversarial-spec
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+log_info() { echo -e "${GREEN}==>${NC} $1"; }
+log_warn() { echo -e "${YELLOW}==>${NC} $1"; }
+log_error() { echo -e "${RED}==>${NC} $1"; }
+
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+install_adversarial_spec() {
+    log_info "Installing adversarial-spec dependencies..."
+
+    # Install litellm (required for multi-model support)
+    if command_exists pip3; then
+        log_info "Installing litellm via pip3..."
+        pip3 install --quiet --upgrade litellm
+    elif command_exists pip; then
+        log_info "Installing litellm via pip..."
+        pip install --quiet --upgrade litellm
+    else
+        log_error "pip required for adversarial-spec"
+        exit 1
+    fi
+
+    # Check for Claude Code plugin installation
+    if command_exists claude; then
+        log_info "Claude Code detected - you can install the plugin with:"
+        log_info "  claude plugin marketplace add zscole/adversarial-spec"
+        log_info "  claude plugin install adversarial-spec"
+    fi
+
+    log_info "adversarial-spec dependencies installed"
+    log_info ""
+    log_info "Configuration required:"
+    log_info "  export OPENAI_API_KEY=\"sk-...\""
+    log_info "  # Or for OpenRouter:"
+    log_info "  export OPENROUTER_API_KEY=\"sk-or-...\""
+}
+
+install_adversarial_spec "$@"
