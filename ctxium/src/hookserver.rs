@@ -40,11 +40,7 @@ pub async fn run(port: u16, log_file: &str) -> Result<(), Box<dyn std::error::Er
         "[ctxium]".cyan(),
         addr.green()
     );
-    println!(
-        "{} Log file: {}",
-        "[ctxium]".cyan(),
-        log_file.yellow()
-    );
+    println!("{} Log file: {}", "[ctxium]".cyan(), log_file.yellow());
     println!("{} Waiting for hook events...\n", "[ctxium]".cyan());
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
@@ -102,10 +98,7 @@ fn print_hook(payload: &HookPayload) {
 }
 
 fn append_to_log(path: &PathBuf, payload: &HookPayload) -> std::io::Result<()> {
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)?;
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
     let json = serde_json::to_string(payload)?;
     writeln!(file, "{}", json)?;

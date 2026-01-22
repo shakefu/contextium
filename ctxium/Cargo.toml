@@ -28,6 +28,22 @@ chrono = { version = "0.4", features = ["serde"] }
 # Colored output
 colored = "2"
 
+# Archive extraction (for bootstrap)
+tar = "0.4"
+flate2 = "1.0"
+
+# Temp directories
+tempfile = "3"
+
+# Cross-platform home directory
+dirs = "5"
+
+# Async trait support
+async-trait = "0.1"
+
+# Futures for concurrent execution
+futures = "0.3"
+
 [profile.release]
 strip = true
 lto = true
