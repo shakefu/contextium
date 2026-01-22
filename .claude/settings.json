@@ -6,11 +6,103 @@
         "hooks": [
           {
             "type": "command",
-            "command": "nohup ./script/bootstrap > /tmp/contextium-bootstrap.log 2>&1 &"
+            "command": "./script/install/ctxium 2>&1 | tee /tmp/contextium-ctxium-install.log"
+          },
+          {
+            "type": "command",
+            "command": "ctxium hook SessionStart"
           },
           {
             "type": "command",
             "command": "./agents/run-startup.sh 2>&1 | tee /tmp/contextium-startup.log"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook SessionEnd"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook PreToolUse"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook PostToolUse"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook UserPromptSubmit"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook PermissionRequest"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook Stop"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook SubagentStop"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ctxium hook PreCompact"
           }
         ]
       }

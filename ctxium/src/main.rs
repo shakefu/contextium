@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 
+mod bootstrap;
 mod hook;
 mod hookserver;
 

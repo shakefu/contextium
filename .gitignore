@@ -22,5 +22,8 @@ __pycache__/
 *.pyc
 target/
 
+# Python virtual environment (created by uv)
+.venv/
+
 # External tools (cloned repos)
-tools/
+/tools/
