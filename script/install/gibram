@@ -4,8 +4,13 @@
 #
 # Install gibram - In-memory knowledge graph for RAG
 # https://github.com/gibram-io/gibram
+#
+# Downloads binary directly to ~/.local/bin (no sudo required)
 
 set -e
+
+cd "$(dirname "$0")/../.."
+REPO_ROOT="$(pwd)"
 
 # Colors
 GREEN='\033[0;32m'
@@ -19,45 +24,103 @@ log_error() { echo -e "${RED}==>${NC} $1"; }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+# Detect platform
+detect_platform() {
+    local os arch
+
+    case "$(uname -s)" in
+        Darwin) os="darwin" ;;
+        Linux)  os="linux" ;;
+        *)      log_error "Unsupported OS: $(uname -s)"; return 1 ;;
+    esac
+
+    case "$(uname -m)" in
+        x86_64)  arch="amd64" ;;
+        amd64)   arch="amd64" ;;
+        arm64)   arch="arm64" ;;
+        aarch64) arch="arm64" ;;
+        *)       log_error "Unsupported architecture: $(uname -m)"; return 1 ;;
+    esac
+
+    echo "${os}-${arch}"
+}
+
 install_gibram() {
     log_info "Installing gibram..."
 
+    # Check if already installed
     if command_exists gibram-server; then
-        log_info "gibram-server already installed"
+        log_info "gibram-server already installed: $(which gibram-server)"
         return 0
     fi
 
-    # Try official install script first
-    log_info "Trying official install script..."
-    if curl -fsSL https://gibram.io/install.sh 2>/dev/null | sh 2>/dev/null; then
-        log_info "gibram installed via official script"
-        return 0
+    # Detect platform
+    local platform
+    platform=$(detect_platform) || return 1
+    log_info "Detected platform: $platform"
+
+    # Version and URLs
+    local version="v0.1.0"
+    local download_url="https://github.com/gibram-io/gibram/releases/download/${version}/gibram-${platform}.tar.gz"
+    local install_dir="$HOME/.local/bin"
+    local config_dir="$HOME/.config/gibram"
+
+    # Create directories
+    mkdir -p "$install_dir"
+    mkdir -p "$config_dir"
+
+    # Download and extract
+    log_info "Downloading gibram $version for $platform..."
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    trap "rm -rf $tmp_dir" EXIT
+
+    if ! curl -fsSL -o "$tmp_dir/gibram.tar.gz" "$download_url"; then
+        log_error "Failed to download gibram from $download_url"
+        return 1
     fi
 
-    log_warn "Official script failed, trying alternatives..."
+    log_info "Extracting..."
+    tar -xzf "$tmp_dir/gibram.tar.gz" -C "$tmp_dir"
 
-    # Try Docker
-    if command_exists docker; then
-        log_info "Docker available - you can run gibram via:"
-        log_info "  docker run -p 6161:6161 gibramio/gibram:latest"
-        log_info "  # Or with docker-compose up -d"
+    # Find the binary (might be in root or subdirectory)
+    local binary
+    binary=$(find "$tmp_dir" -name "gibram-server" -type f | head -1)
+    if [[ -z "$binary" ]]; then
+        # Try alternate name
+        binary=$(find "$tmp_dir" -name "gibram" -type f | head -1)
     fi
 
-    # Try pip
-    if command_exists pip3; then
-        log_info "Installing gibram via pip3..."
-        pip3 install --quiet gibram
-        log_info "gibram Python SDK installed"
-        return 0
-    elif command_exists pip; then
-        log_info "Installing gibram via pip..."
-        pip install --quiet gibram
-        log_info "gibram Python SDK installed"
-        return 0
+    if [[ -z "$binary" ]]; then
+        log_error "Binary not found in archive"
+        ls -la "$tmp_dir"
+        return 1
     fi
 
-    log_warn "Could not install gibram server - Docker or pip recommended"
-    log_info "Manual install: curl -fsSL https://gibram.io/install.sh | sh"
+    # Install binary
+    cp "$binary" "$install_dir/gibram-server"
+    chmod +x "$install_dir/gibram-server"
+
+    # Re-sign on macOS
+    if [[ "$(uname)" == "Darwin" ]]; then
+        codesign --force --sign - "$install_dir/gibram-server" 2>/dev/null || true
+    fi
+
+    log_info "Installed gibram-server to $install_dir/gibram-server"
+
+    # Check PATH
+    if [[ ":$PATH:" != *":$install_dir:"* ]]; then
+        log_warn "$install_dir is not in PATH"
+        log_info "Add to your shell profile: export PATH=\"$install_dir:\$PATH\""
+    fi
+
+    # Verify
+    if command_exists gibram-server; then
+        log_info "gibram installed successfully"
+        log_info "Run: gibram-server --help"
+    else
+        log_warn "gibram installed but not in PATH for this session"
+    fi
 }
 
 install_gibram "$@"

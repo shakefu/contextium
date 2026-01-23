@@ -62,6 +62,11 @@ install_ctxium() {
     cp "$binary_src" "$binary_dst"
     chmod +x "$binary_dst"
 
+    # Re-sign on macOS (required after copying to avoid signature invalidation)
+    if [[ "$(uname)" == "Darwin" ]]; then
+        codesign --force --sign - "$binary_dst" 2>/dev/null || true
+    fi
+
     log_info "Installed ctxium to $binary_dst"
 
     # Check if install dir is in PATH

@@ -4,6 +4,8 @@
 #
 # Install adversarial-spec - Multi-model specification refinement
 # https://github.com/zscole/adversarial-spec
+#
+# Uses uv for Python package management (no system pip)
 
 set -e
 
@@ -22,18 +24,35 @@ log_error() { echo -e "${RED}==>${NC} $1"; }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+# Ensure uv is available
+ensure_uv() {
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+    if ! command_exists uv; then
+        log_info "Installing uv first..."
+        "$REPO_ROOT/script/install/uv" || return 1
+        export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+    fi
+}
+
+# Ensure .venv exists
+ensure_venv() {
+    if [ ! -d "$REPO_ROOT/.venv" ]; then
+        log_info "Creating .venv..."
+        uv venv "$REPO_ROOT/.venv"
+    fi
+}
+
 install_adversarial_spec() {
     log_info "Installing adversarial-spec..."
 
-    # Install litellm (required for multi-model support)
-    if command_exists pip3; then
-        log_info "Installing litellm via pip3..."
-        pip3 install --quiet --upgrade litellm 2>/dev/null || true
-    elif command_exists pip; then
-        log_info "Installing litellm via pip..."
-        pip install --quiet --upgrade litellm 2>/dev/null || true
+    # Install litellm (required for multi-model support) using uv
+    if ensure_uv; then
+        ensure_venv
+        log_info "Installing litellm via uv..."
+        cd "$REPO_ROOT"
+        uv pip install --quiet --upgrade litellm 2>/dev/null || log_warn "litellm install failed"
     else
-        log_error "pip required for adversarial-spec"
+        log_error "uv required for adversarial-spec Python dependencies"
         exit 1
     fi
 
