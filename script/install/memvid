@@ -4,8 +4,13 @@
 #
 # Install memvid - Portable single-file memory system for AI agents
 # https://github.com/memvid/memvid
+#
+# Uses uv for Python package management (no system pip)
 
 set -e
+
+cd "$(dirname "$0")/../.."
+REPO_ROOT="$(pwd)"
 
 # Colors
 GREEN='\033[0;32m'
@@ -19,6 +24,24 @@ log_error() { echo -e "${RED}==>${NC} $1"; }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+# Ensure uv is available
+ensure_uv() {
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+    if ! command_exists uv; then
+        log_info "Installing uv first..."
+        "$REPO_ROOT/script/install/uv" || return 1
+        export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+    fi
+}
+
+# Ensure .venv exists
+ensure_venv() {
+    if [ ! -d "$REPO_ROOT/.venv" ]; then
+        log_info "Creating .venv..."
+        uv venv "$REPO_ROOT/.venv"
+    fi
+}
+
 install_memvid() {
     log_info "Installing memvid..."
 
@@ -30,24 +53,20 @@ install_memvid() {
             log_info "memvid CLI already installed"
         else
             log_info "Installing memvid-cli via npm..."
-            npm install -g memvid-cli
-            installed=true
+            npm install -g memvid-cli 2>/dev/null && installed=true || log_warn "memvid-cli npm install failed"
         fi
     else
         log_warn "npm not found, skipping CLI install"
     fi
 
-    # Install Python SDK
-    if command_exists pip3; then
-        log_info "Installing memvid-sdk via pip3..."
-        pip3 install --quiet --upgrade memvid-sdk
-        installed=true
-    elif command_exists pip; then
-        log_info "Installing memvid-sdk via pip..."
-        pip install --quiet --upgrade memvid-sdk
-        installed=true
+    # Install Python SDK using uv
+    if ensure_uv; then
+        ensure_venv
+        log_info "Installing memvid-sdk via uv..."
+        cd "$REPO_ROOT"
+        uv pip install --quiet --upgrade memvid-sdk 2>/dev/null && installed=true || log_warn "memvid-sdk install failed"
     else
-        log_warn "pip not found, skipping Python SDK install"
+        log_warn "uv not available, skipping Python SDK install"
     fi
 
     # Install Rust crate if cargo available
@@ -59,7 +78,7 @@ install_memvid() {
     if [ "$installed" = true ]; then
         log_info "memvid installed successfully"
     else
-        log_error "Could not install memvid - npm or pip required"
+        log_error "Could not install memvid - npm or uv required"
         exit 1
     fi
 }
