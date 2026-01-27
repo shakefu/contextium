@@ -107,9 +107,9 @@ fn append_to_log(path: &PathBuf, payload: &HookPayload) -> std::io::Result<()> {
 }
 
 fn expand_tilde(path: &str) -> PathBuf {
-    if path.starts_with("~/") {
+    if let Some(stripped) = path.strip_prefix("~/") {
         if let Some(home) = dirs_home() {
-            return PathBuf::from(home).join(&path[2..]);
+            return PathBuf::from(home).join(stripped);
         }
     }
     PathBuf::from(path)

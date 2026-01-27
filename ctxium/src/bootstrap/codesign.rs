@@ -1,5 +1,6 @@
 //! macOS code signing utilities for bootstrap operations
 
+#[cfg(target_os = "macos")]
 use super::shell::run_command;
 use super::BootstrapError;
 use std::path::Path;
@@ -8,6 +9,7 @@ use std::path::Path;
 ///
 /// This is required for binaries downloaded from the internet on macOS
 /// to avoid "cannot be opened because the developer cannot be verified" errors.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn codesign_adhoc(binary_path: &Path) -> Result<(), BootstrapError> {
     #[cfg(target_os = "macos")]
     {
@@ -33,6 +35,7 @@ pub fn codesign_adhoc(binary_path: &Path) -> Result<(), BootstrapError> {
 /// Remove quarantine attribute on macOS
 ///
 /// Downloaded binaries may have a quarantine attribute that prevents execution.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn remove_quarantine(path: &Path) -> Result<(), BootstrapError> {
     #[cfg(target_os = "macos")]
     {
