@@ -1,91 +1,131 @@
 ---
 name: cicd-setup
-description: Create and configure CI/CD pipelines with best practices. Triggers on requests to set up CI/CD, add GitHub Actions, create pipelines, automate testing/deployment, configure workflows, add continuous integration, or automate releases.
+description: Create and configure CI/CD pipelines with security-first best practices. Triggers on requests to set up CI/CD, add GitHub Actions, create pipelines, automate testing/deployment, configure workflows, add continuous integration, or automate releases.
 allowed-tools: Read, Edit, Write, Task, Glob, Grep, Bash
 ---
 
 # CI/CD Setup
 
-Create production-ready CI/CD pipelines following industry best practices.
+Create secure, production-ready CI/CD pipelines following 2025-2026 best practices.
 
 ## Workflow
 
-### 1. Analyze Project (Parallel)
+### 1. Detect Platform and Stack
 
-Spawn two agents simultaneously:
+Run these Glob patterns to identify the project:
 
-**Platform Detector (Explore agent):**
 ```
-Detect CI/CD platform for this project:
-1. Check for existing workflow files (.github/workflows/, .gitlab-ci.yml, .circleci/)
-2. Check for GitHub/GitLab remote
-3. Return: platform type, existing workflows, recommendations
-```
+Platform detection:
+- .github/workflows/*.yml → GitHub Actions
+- .gitlab-ci.yml → GitLab CI
+- .circleci/config.yml → CircleCI
 
-**Tech Stack Analyzer (Explore agent):**
-```
-Analyze project tech stack:
-1. Identify languages (package.json, Cargo.toml, go.mod, pyproject.toml, etc.)
-2. Identify test frameworks
-3. Identify build tools
-4. Check for Dockerfile
-5. Return: languages, test commands, build commands, docker usage
+Stack detection:
+- package.json, package-lock.json, yarn.lock, pnpm-lock.yaml → Node.js
+- Cargo.toml, Cargo.lock → Rust
+- go.mod, go.sum → Go
+- pyproject.toml, requirements.txt, setup.py → Python
+- Dockerfile, docker-compose.yml → Docker
 ```
 
 ### 2. Generate Workflows
 
-Based on analysis, spawn generation agents (parallel if both needed):
+Based on detected stack, create:
 
-**CI Workflow Generator (general-purpose):**
-- Linting configuration
-- Test execution with coverage
-- Build verification
-- Caching strategy (dependencies, build artifacts)
-- Matrix testing (multiple versions where appropriate)
+1. **CI workflow** (`.github/workflows/ci.yml`) - lint, test, build
+2. **Dependabot config** (`.github/dependabot.yml`) - dependency updates
+3. **CD workflow** (if deployment needed) - release/deploy
 
-**CD Workflow Generator (general-purpose):**
-- Release automation
-- Deployment configuration
-- Environment-specific workflows
-- Required secrets documentation
+### 3. Document Setup
 
-### 3. Write and Document
+After creating workflows, list:
+- Required secrets (if any)
+- Required repository settings
+- How to verify it works
 
-- Write workflow files to appropriate location
-- Document required secrets and setup steps
-- Provide manual verification commands
+## Security Requirements (Non-Negotiable)
 
-## Best Practices Applied
+### Pin Actions to Full SHA
 
-### Security
-- Never hardcode secrets (use repository secrets)
-- Pin action versions with SHA (not `@v1`)
-- Use minimal permissions (`permissions:` block)
-- Add security scanning (dependabot, CodeQL where appropriate)
+After the 2025 tj-actions and reviewdog supply chain attacks, NEVER use mutable tags:
 
-### Performance
-- Cache dependencies aggressively
-- Use matrix builds sparingly (cost vs coverage)
-- Fail fast on critical checks
-- Run expensive jobs only on relevant changes (path filters)
+```yaml
+# WRONG - tag can be hijacked
+- uses: actions/checkout@v4
 
-### Reliability
-- Use `timeout-minutes` to prevent hung jobs
-- Add retry logic for flaky network operations
-- Use `concurrency` to prevent duplicate runs
-- Test workflows in feature branches first
+# CORRECT - immutable SHA
+- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+```
 
-### Maintainability
-- Keep workflows focused (separate CI from CD)
-- Use reusable workflows for shared logic
-- Document non-obvious steps with comments
-- Use meaningful job and step names
+To find current SHAs: `gh api repos/actions/checkout/releases/latest --jq '.tag_name'` then check the commit.
 
-## Platform Reference
+### Use OIDC Instead of Long-Lived Secrets
 
-### GitHub Actions
+Eliminate stored credentials with OIDC:
 
-Location: `.github/workflows/*.yml`
+```yaml
+permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+    with:
+      role-to-assume: arn:aws:iam::ACCOUNT:role/GitHubActionsRole
+      aws-region: us-east-1
+      # No AWS_ACCESS_KEY_ID needed - OIDC provides short-lived tokens
+```
+
+### Minimal Permissions
+
+Always declare explicit permissions:
+
+```yaml
+permissions:
+  contents: read      # Only what's needed
+  # Default is read-all for GITHUB_TOKEN if not specified
+```
+
+### Protect Against pull_request_target
+
+NEVER checkout PR code in `pull_request_target` workflows - this gives untrusted code access to secrets:
+
+```yaml
+# DANGEROUS - attacker can access secrets via PR code
+on: pull_request_target
+steps:
+  - uses: actions/checkout@SHA
+    with:
+      ref: ${{ github.event.pull_request.head.sha }}  # BAD
+
+# SAFE - use pull_request instead (no secrets access, read-only token)
+on: pull_request
+```
+
+## Dependabot Configuration
+
+Always include GitHub Actions in Dependabot:
+
+```yaml
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Add for your package manager
+  - package-ecosystem: "npm"  # or pip, cargo, gomod
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
+## CI Workflow Template
 
 ```yaml
 name: CI
@@ -99,102 +139,91 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup and test
-        run: |
-          # Setup commands
-          # Test commands
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Add setup step for your language (see patterns below)
+
+      - name: Lint
+        run: # lint command
+
+      - name: Test
+        run: # test command
 ```
 
-### GitLab CI
+## Language Setup Patterns
 
-Location: `.gitlab-ci.yml`
-
+### Node.js
 ```yaml
-stages:
-  - test
-  - build
-  - deploy
-
-test:
-  stage: test
-  script:
-    - # test commands
-  cache:
-    paths:
-      - node_modules/  # or equivalent
-```
-
-## Common Patterns
-
-### Node.js CI
-```yaml
-- uses: actions/setup-node@v4
+- uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
   with:
     node-version-file: '.nvmrc'
     cache: 'npm'
 - run: npm ci
+- run: npm run lint
 - run: npm test
 ```
 
-### Python CI
+### Python
 ```yaml
-- uses: actions/setup-python@v5
+- uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
   with:
     python-version-file: '.python-version'
     cache: 'pip'
 - run: pip install -e ".[dev]"
+- run: ruff check .
 - run: pytest
 ```
 
-### Rust CI
+### Rust
 ```yaml
-- uses: dtolnay/rust-toolchain@stable
-- uses: Swatinem/rust-cache@v2
+- uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0 # stable
+  with:
+    toolchain: stable
+    components: clippy, rustfmt
+- uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+- run: cargo fmt --check
+- run: cargo clippy -- -D warnings
 - run: cargo test
 ```
 
-### Go CI
+### Go
 ```yaml
-- uses: actions/setup-go@v5
+- uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
   with:
     go-version-file: 'go.mod'
-- run: go test ./...
+- run: go vet ./...
+- run: go test -race ./...
 ```
 
-### Docker Build
-```yaml
-- uses: docker/setup-buildx-action@v3
-- uses: docker/build-push-action@v5
-  with:
-    context: .
-    push: false
-    cache-from: type=gha
-    cache-to: type=gha,mode=max
-```
+## Common Pitfalls
 
-## Troubleshooting
+| Mistake | Fix |
+|---------|-----|
+| Using `@v4` tags | Pin to full SHA with version comment |
+| Storing AWS keys as secrets | Use OIDC with `id-token: write` |
+| No timeout on jobs | Add `timeout-minutes: 15` (or appropriate) |
+| Running on every push | Add path filters for docs-only changes |
+| Self-hosted runners on public repos | Use GitHub-hosted or private repos only |
+| `pull_request_target` with checkout | Use `pull_request` trigger instead |
 
-| Issue | Solution |
-|-------|----------|
-| Workflow not triggering | Check branch names, path filters, event types |
-| Cache not working | Verify cache key includes lockfile hash |
-| Secrets not available | Check if job has `environment:` or is on fork |
-| Permission denied | Add explicit `permissions:` block |
-
-See `references/advanced-patterns.md` for reusable workflows, matrix builds, release automation, and security scanning patterns.
+See `references/advanced-patterns.md` for supply chain security (SLSA, SBOM, signing), reusable workflows, and monorepo patterns.
 
 ## Output Checklist
 
 After setup, verify:
-- [ ] Workflow triggers on correct events
-- [ ] Tests pass locally first
-- [ ] Required secrets documented
-- [ ] Caching configured correctly
-- [ ] Job timeouts set
-- [ ] Permissions minimized
+- [ ] All actions pinned to SHA with version comment
+- [ ] `permissions:` block explicitly set
+- [ ] `concurrency:` prevents duplicate runs
+- [ ] `timeout-minutes:` set on all jobs
+- [ ] Dependabot configured for actions AND dependencies
+- [ ] No long-lived credentials (use OIDC where possible)
+- [ ] Tests pass locally before pushing workflow
