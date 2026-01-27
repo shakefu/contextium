@@ -127,3 +127,4 @@ These skills trigger automatically based on natural language requests:
 | skill-creator | "create skill", "make skill", "build skill" | Create new Claude skills following best practices |
 | skill-improver | "improve skill", "update skill", "research best practices" | Research and improve skills with current best practices |
 | skill-architect | "architect skill", "design agents", "plan skill agents" | Design subagents for new skills |
+| cicd-setup | "set up CI/CD", "add GitHub Actions", "create pipeline", "automate testing" | Create production-ready CI/CD pipelines with best practices |
