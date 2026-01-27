@@ -159,12 +159,12 @@ impl ToolInstaller for AdversarialSpecInstaller {
         }
 
         eprintln!("{} adversarial-spec installed", "==>".green());
-        eprintln!("{}", "");
+        eprintln!();
         eprintln!(
             "{} Usage: /adversarial-spec \"your feature description\"",
             "==>".green()
         );
-        eprintln!("{}", "");
+        eprintln!();
         eprintln!("{} API keys (set at least one):", "==>".green());
         eprintln!(
             "{}   OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY",

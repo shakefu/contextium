@@ -44,7 +44,7 @@ pub async fn download_and_extract(
         extract_tar_gz(&bytes, temp_dir.path())?;
     } else {
         // Just write the file as-is
-        let filename = url.split('/').last().unwrap_or("download");
+        let filename = url.split('/').next_back().unwrap_or("download");
         let file_path = temp_dir.path().join(filename);
         std::fs::write(&file_path, &bytes).map_err(BootstrapError::IoError)?;
     }
