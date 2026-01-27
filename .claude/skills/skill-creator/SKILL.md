@@ -13,6 +13,7 @@ Create effective, token-efficient Claude skills.
 1. **Concise** - Challenge every token. Only add what Claude doesn't already know.
 2. **Appropriate freedom** - Match specificity to task fragility (see references/workflows.md)
 3. **Progressive disclosure** - Metadata → SKILL.md → references (loaded as needed)
+4. **Favor subagents** - Design skills to use Task tool for parallel work where beneficial
 
 ## Skill Structure
 
@@ -45,10 +46,12 @@ Use subagents (Task tool) to parallelize research during the Understand phase.
 ---
 name: lowercase-hyphenated
 description: What it does AND when to trigger. Include specific triggers, keywords, use cases. This is the PRIMARY triggering mechanism.
+allowed-tools: Read, Edit, Write, Task  # Include Task for subagent support
 ---
 ```
 
 The `description` must contain ALL "when to use" info - body is only loaded AFTER triggering.
+Include `Task` in allowed-tools to enable subagent parallelization.
 
 ### Body Guidelines
 
