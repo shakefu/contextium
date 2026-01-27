@@ -1,7 +1,7 @@
 ---
 name: skill-improver
 description: Research and improve Claude skills with current best practices. Triggers on requests to improve skills, update skills, research best practices for skills, enhance skill quality, or modernize existing skills.
-allowed-tools: WebSearch, Read, Edit, Write, Glob
+allowed-tools: WebSearch, Read, Edit, Write, Glob, Task
 ---
 
 # Skill Improver
@@ -29,17 +29,20 @@ Read SKILL.md and all references to understand current implementation.
 
 ## Step 2: Research Best Practices
 
-Search for current best practices related to the skill's domain:
+Use subagents (Task tool) to parallelize research across multiple topics:
 
 ```
-Search queries to use:
-- "<domain> best practices 2026"
-- "<domain> modern approaches"
-- "<domain> common mistakes to avoid"
-- "Claude AI <domain> techniques" (if applicable)
+Spawn parallel research agents for:
+1. "<domain> best practices 2026"
+2. "<domain> common mistakes to avoid"
+3. "Claude AI <domain> techniques" (if applicable)
 ```
 
-Focus on:
+Each subagent should return:
+- Key findings with sources
+- Actionable recommendations
+
+Focus areas:
 - Industry standards and conventions
 - Common pitfalls and how to avoid them
 - Performance optimizations
