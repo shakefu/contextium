@@ -27,16 +27,15 @@ skill-name/
 
 ## Creation Workflow
 
-1. **Understand** - Gather concrete usage examples
-2. **Plan** - Identify reusable resources (scripts/references/assets)
-3. **Initialize** - Run `scripts/init_skill.py <name> --path <dir>`
-4. **Implement** - Create resources, write SKILL.md
-5. **Validate** - Run `scripts/validate_skill.py <skill-dir>`
-6. **Register** - Add skill to `.claude/claude.md` under "Auto-Triggered Skills"
-7. **Package** - Run `scripts/package_skill.py <skill-dir>` (creates .skill file)
-8. **Iterate** - Improve based on real usage
-
-Use subagents (Task tool) to parallelize research during the Understand phase.
+1. **Understand** - Gather concrete usage examples (use subagents for parallel research)
+2. **Architect** - Use skill-architect to design subagents for the skill
+3. **Plan** - Identify reusable resources (scripts/references/assets)
+4. **Initialize** - Run `scripts/init_skill.py <name> --path <dir>`
+5. **Implement** - Create resources, write SKILL.md with agent definitions
+6. **Validate** - Run `scripts/validate_skill.py <skill-dir>`
+7. **Register** - Add skill to `.claude/claude.md` under "Auto-Triggered Skills"
+8. **Package** - Run `scripts/package_skill.py <skill-dir>` (creates .skill file)
+9. **Iterate** - Improve based on real usage
 
 ## Writing SKILL.md
 
