@@ -1,7 +1,7 @@
 ---
 name: skill-creator
 description: Create Claude skills following best practices. Use when building new skills, packaging skill folders, or improving existing skills. Triggers on requests to create skills, make skills, build capabilities, or package skill directories.
-allowed-tools: Bash, Read, Write, Edit
+allowed-tools: Bash, Read, Write, Edit, Task
 ---
 
 # Skill Creator
@@ -31,8 +31,11 @@ skill-name/
 3. **Initialize** - Run `scripts/init_skill.py <name> --path <dir>`
 4. **Implement** - Create resources, write SKILL.md
 5. **Validate** - Run `scripts/validate_skill.py <skill-dir>`
-6. **Package** - Run `scripts/package_skill.py <skill-dir>` (creates .skill file)
-7. **Iterate** - Improve based on real usage
+6. **Register** - Add skill to `.claude/claude.md` under "Auto-Triggered Skills"
+7. **Package** - Run `scripts/package_skill.py <skill-dir>` (creates .skill file)
+8. **Iterate** - Improve based on real usage
+
+Use subagents (Task tool) to parallelize research during the Understand phase.
 
 ## Writing SKILL.md
 
