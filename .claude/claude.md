@@ -117,3 +117,12 @@ Contextium provides Claude Code skills for agent invocation:
 ```
 
 Skills are defined in `.claude/skills/` and integrate with the shell agents in `agents/`.
+
+### Auto-Triggered Skills
+
+These skills trigger automatically based on natural language requests:
+
+| Skill | Triggers On | Purpose |
+|-------|-------------|---------|
+| skill-creator | "create skill", "make skill", "build skill" | Create new Claude skills following best practices |
+| skill-improver | "improve skill", "update skill", "research best practices" | Research and improve skills with current best practices |
