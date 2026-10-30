@@ -36,7 +36,7 @@ flate2 = "1.1"
 tempfile = "3"
 
 # Cross-platform home directory
-dirs = "6"
+dirs = "7"
 
 # Async trait support
 async-trait = "0.1"
